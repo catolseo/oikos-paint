@@ -1,0 +1,8 @@
+.claude/
+extracted/
+extracted_16c/
+extracted_24c/
+data/
+*.log
+Thumbs.db
+.DS_Store
