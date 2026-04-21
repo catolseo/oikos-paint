@@ -36,6 +36,7 @@ function init() {
   $("subproductSearch").addEventListener("input", refreshSubproductList);
   $("series").addEventListener("change", refreshColorList);
   $("search").addEventListener("input", refreshColorList);
+  $("color").addEventListener("change", onColorChange);
   $("calc").addEventListener("click", calculate);
 
   onProductChange();
@@ -94,7 +95,7 @@ async function ensureProductLoaded(prd_id) {
   $("loadStatus").textContent = `Загрузка формул…`;
   await new Promise((resolve, reject) => {
     const s = document.createElement("script");
-    s.src = `formulas/p${prd_id}.js`;
+    s.src = `formulas/p${prd_id}.js?v=${state.core.version}`;
     s.onload = resolve;
     s.onerror = reject;
     document.head.append(s);
@@ -142,6 +143,17 @@ function toMl(amount, unit, density) {
   }
 }
 
+function rgbToHex(rgb) {
+  return rgb ? "#" + rgb.map((n) => n.toString(16).padStart(2, "0")).join("") : null;
+}
+
+function onColorChange() {
+  const row = state.visibleColors.find((r) => r[1] === $("color").value);
+  const hex = rgbToHex(row?.[6]);
+  document.body.style.setProperty("--selected-color", hex || "transparent");
+  document.body.classList.toggle("has-color", !!hex);
+}
+
 function parseFormula(str) {
   return str.split(";").map((part) => {
     const [cid, amt] = part.split(":");
@@ -185,7 +197,7 @@ function calculate() {
   $("totMl").textContent = totals.ml.toFixed(2);
   $("totG").textContent = totals.g.toFixed(2);
 
-  const hex = rgb ? "#" + rgb.map((n) => n.toString(16).padStart(2, "0")).join("") : "#bbb";
+  const hex = rgbToHex(rgb) ?? "#bbb";
   const nameCell = $("resColorName");
   nameCell.innerHTML = "";
   nameCell.append(swatchEl(hex), document.createTextNode(key1 + (key3 ? ` · ${key3}` : "")));

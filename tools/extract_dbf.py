@@ -73,9 +73,23 @@ def num(v, default=0.0):
 
 def rgb_int(r):
     rr, gg, bb = int(num(r["R_MON"])), int(num(r["G_MON"])), int(num(r["B_MON"]))
-    if rr < 0 or gg < 0 or bb < 0:
+    if rr >= 0 and gg >= 0 and bb >= 0:
+        return [rr & 0xFF, gg & 0xFF, bb & 0xFF]
+    # Fall back to CIE XYZ (D65) → sRGB. Oikos stores X,Y,Z on a 0-100 scale.
+    x, y, z = num(r["X_02"]), num(r["Y_02"]), num(r["Z_02"])
+    if x <= 0 or y <= 0 or z <= 0:
         return None
-    return [rr & 0xFF, gg & 0xFF, bb & 0xFF]
+    xr, yr, zr = x / 100, y / 100, z / 100
+    lr = 3.2406 * xr - 1.5372 * yr - 0.4986 * zr
+    lg = -0.9689 * xr + 1.8758 * yr + 0.0415 * zr
+    lb = 0.0557 * xr - 0.2040 * yr + 1.0570 * zr
+
+    def gamma(c):
+        c = max(0.0, min(1.0, c))
+        c = 12.92 * c if c <= 0.0031308 else 1.055 * (c ** (1 / 2.4)) - 0.055
+        return round(max(0.0, min(1.0, c)) * 255)
+
+    return [gamma(lr), gamma(lg), gamma(lb)]
 
 
 def compact_formula(f):

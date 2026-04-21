@@ -7,6 +7,7 @@
   --card: #ffffff;
   --border: #e3ddd1;
   --ok: #2f7a4c;
+  --selected-color: transparent;
 }
 
 * { box-sizing: border-box; }
@@ -17,6 +18,14 @@ body {
   background: var(--bg);
   color: var(--fg);
   line-height: 1.45;
+  min-height: 100vh;
+  transition: background-color 0.45s ease;
+}
+body.has-color {
+  background-color: var(--selected-color);
+}
+body.has-color .card {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
 
 header {
