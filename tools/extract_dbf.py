@@ -129,7 +129,12 @@ def main():
     }
 
     out_cans = {
-        cid: {"descr": c["DESCR"], "ml": num(c["NOM_Q"])} for cid, c in cans.items()
+        cid: {
+            "descr": c["DESCR"],
+            "amount": num(c["NOM_Q"]),
+            "kind": "mass" if "KG" in c["DESCR"].upper() else "volume",
+        }
+        for cid, c in cans.items()
     }
 
     product_catalog = []

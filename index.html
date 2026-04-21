@@ -59,7 +59,13 @@
           <select id="unit">
             <option value="L">литры</option>
             <option value="ml">миллилитры</option>
+            <option value="kg">килограммы</option>
+            <option value="g">граммы</option>
           </select>
+        </label>
+        <label>
+          Плотность базы, г/мл
+          <input id="density" type="number" value="1.35" min="0.5" max="2.5" step="0.01" />
         </label>
       </div>
       <button id="calc">Рассчитать</button>

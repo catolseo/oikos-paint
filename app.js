@@ -1,7 +1,7 @@
 "use strict";
 
 const ML_PER_L = 1000;
-const UNIT_LABEL = { L: "л", ml: "мл" };
+const UNIT_LABEL = { L: "л", ml: "мл", kg: "кг", g: "г" };
 
 const state = {
   core: null,
@@ -132,6 +132,16 @@ function refreshColorList() {
   }));
 }
 
+function toMl(amount, unit, density) {
+  switch (unit) {
+    case "L": return amount * ML_PER_L;
+    case "ml": return amount;
+    case "kg": return (amount * ML_PER_L) / density;
+    case "g": return amount / density;
+    default: return 0;
+  }
+}
+
 function parseFormula(str) {
   return str.split(";").map((part) => {
     const [cid, amt] = part.split(":");
@@ -148,10 +158,12 @@ function calculate() {
   const amount = parseFloat($("amount").value);
   if (!(amount > 0)) return;
   const unit = $("unit").value;
-  const volumeMl = unit === "L" ? amount * ML_PER_L : amount;
+  const density = parseFloat($("density").value) || 1.35;
 
   const can = state.core.cans[can_id];
-  const factor = volumeMl / can.ml;
+  const targetMl = toMl(amount, unit, density);
+  const targetG = targetMl * density;
+  const factor = can.kind === "mass" ? targetG / can.amount : targetMl / can.amount;
   const items = parseFormula(fstr);
 
   const tbody = $("result").querySelector("tbody");
