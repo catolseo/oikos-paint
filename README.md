@@ -1,57 +1,132 @@
-# Oikos Expert Tint — колорант-калькулятор
+# Oikos Expert Tint — веб-калькулятор колорантов
 
-Браузерный калькулятор формул колорантов на базе зашифрованной FoxPro-БД Oikos Expert Tint 9.70 (DCS 16C, 2023-02-03).
+Браузерный калькулятор формул на базе Oikos Expert Tint 9.70 (**COROB DCS 16C** 03-02-2023). Выбираете продукт, цвет и нужный объём (в литрах или килограммах) — получаете количество капель, миллилитров и граммов каждого колоранта.
 
-**Live**: включите GitHub Pages в настройках репозитория (Settings → Pages → Deploy from branch: `main` / `/`), URL будет `https://<user>.github.io/oikos-paint/`.
+**Live**: <https://catolseo.github.io/oikos-paint/>
 
-## Что делает
+---
 
-Выбираете продукт (INTERIOR / EXTERIOR) → подпродукт (KREOS, EXTRAPAINT, MARMORINO, RAL, NCS…) → цвет → объём в литрах. На выходе — таблица колорантов с каплями, миллилитрами и граммами, с учётом плотности каждого пигмента.
+## Что это такое
 
-- 73 167 формул из 123 подпродуктов
-- 16 колорантов системы COROB DCS 16C (GO, GR, MG, VL, BL, VR, VO, NO, GL, AR, RV, RS, RO, BM, NR, BN)
-- 77 баз (P, M, D, TR, BIANCO, NP 3900 и т.д.)
-- 1 капля = 31.246 / 192 ≈ 0.1627 мл (COROB 1/192 EU fl.oz.)
+**Oikos Expert Tint** — профессиональное ПО итальянского производителя декоративных красок [Oikos](https://www.oikos-paint.com/) («Green since 1984») для колеровочных машин на базе технологии [COROB](https://www.corob.com/) (с 2018 г. в составе Graco Inc., мировой лидер в автоматической колеровке с 1984 г.).
 
-## Формула пересчёта
+Программа работает по связке:
 
-Каждая формула в БД задана для конкретной банки `CAN_ID` (с объёмом `NOM_Q`):
+1. Оператор выбирает **продукт** (например, MARMORINO NATURALE, KREOS, EXTRAPAINT) и **цвет** (RAL, NCS, собственные коллекции Oikos).
+2. ПО обращается к зашифрованной FoxPro-БД и подбирает **формулу** — сколько долей каждого колоранта нужно на стандартную банку.
+3. Формула передаётся в диспенсер COROB (например, T500 Automatic Turntable), который точно отмеряет колоранты по каплям (1 капля ≈ 1/192 EU fl.oz. для DCS-16C).
 
-```
-drops_scaled = formula_amount × target_volume_ml / can.ml
-colorant_ml  = drops_scaled × drop_ml
-colorant_g   = colorant_ml × colorant.density
-```
+## COROB DCS 16C — система из 16 колорантов
 
-## Структура
+Oikos использует 16-колорантовую комплектацию COROB (Dispensing Colorant System 16 Colors). Это универсальные водные пасты:
 
-- `index.html`, `app.js`, `styles.css` — UI
-- `data.js` — ядро (колоранты, базы, банки, каталог продуктов) ~13 KB
-- `formulas/p1.js` — формулы INTERIOR (56 035 шт., 4 MB)
-- `formulas/p2.js` — формулы EXTERIOR (17 132 шт., 1.2 MB)
-- `tools/extract_dbf.py` — парсер `C:\GDATA\*.dbf` (dBase III, cp850) → JS
+| Код | Название (IT)        | Перевод                    |
+|-----|----------------------|----------------------------|
+| GO  | GIALLO OSSIDO        | Жёлтый оксидный            |
+| GR  | GIALLO ORO           | Жёлтый золотой             |
+| MG  | MAGENTA              | Маджента                   |
+| VL  | VIOLA                | Фиолетовый                 |
+| BL  | BLU                  | Синий                      |
+| VR  | VERDE                | Зелёный                    |
+| VO  | VERDE OSSIDO         | Зелёный оксидный           |
+| NO  | NERO OSSIDO          | Чёрный оксидный            |
+| GL  | GIALLO LIMONE        | Лимонно-жёлтый             |
+| AR  | ARANCIO              | Оранжевый                  |
+| RV  | ROSSO VIVO           | Красный яркий              |
+| RS  | ROSSO                | Красный                    |
+| RO  | ROSSO OSSIDO         | Красный оксидный           |
+| BM  | BLU MARE             | Морской синий              |
+| NR  | NERO                 | Чёрный                     |
+| BN  | BIANCO               | Белый                      |
 
-## Переэкспорт базы
-
-При обновлении программы Oikos Expert Tint перегенерируйте данные:
-
-```
-python tools/extract_dbf.py
-```
-
-Требуется установленная Oikos Expert Tint (папка `C:\GDATA`).
-
-## Исходные файлы БД
+## Что достаётся из оригинальной БД
 
 ```
 C:\GDATA\
-  PRODUCTS.DBF           INTERIOR (PROD0001) / EXTERIOR (PROD0002)
-  PROD0001\SUBPRODS.DBF  подпродукты категории
-  BASES.DBF              базы (ID → CODE → DESCR)
-  CANS.DBF               размеры банок
-  CNTS.DBF               колоранты
-  COLORKEY.DBF           20 794 цветовых кода (RAL, NCS, Oikos)
-  <prod>\<subprod>\FRM.DBF  формулы
+  FVERS.DAT                  «9.70  OIKOS DCS 16C 03-02-2023»
+  PRODUCTS.DBF               INTERIOR (PROD0001) / EXTERIOR (PROD0002)
+  PROD000N\SUBPRODS.DBF      123 подпродукта: MARMORINO, KREOS, EX2019, …
+  BASES.DBF                  77 баз (P, M, D, TR, BIANCO, NP 3900, …)
+  CANS.DBF                   19 размеров: 0.25/0.5/0.75/1/2.25/2.5/4/5/10/12/13.5/14/15 LT, 1/2.5/5/15/20/25 KG
+  CNTS.DBF                   16 колорантов DCS 16C
+  COLORKEY.DBF               20 794 цветовых кода (RAL, NCS, CC SOFT/MEDIUM, CC SPECIAL, COLLEZIONE COLORE, …)
+  <prod>\<subprod>\FRM.DBF   формулы (73 167 записей суммарно)
 ```
 
-Поле `FRM.FORMULA` — строка вида `"cid,amount,cid,amount,…"` где `cid` — `CNTS.ID`, `amount` — количество единиц-долей (1 ед = `PRODUCTS.UNIT / PRODUCTS.FRACTION` мл).
+Формат поля `FRM.FORMULA` — строка `"cid1,amount1,cid2,amount2,..."`, где:
+- `cid` — `CNTS.ID` (номер колоранта 1–17)
+- `amount` — количество долей; 1 доля = `PRODUCTS.UNIT / PRODUCTS.FRACTION` = 31.246 / 192 ≈ **0.1627 мл**
+
+CIE XYZ (D65) в полях `X_02, Y_02, Z_02` покрывает 99.95% формул и конвертируется в sRGB для визуализации цвета.
+
+## Математика пересчёта
+
+Каждая формула задана на конкретный размер банки `CAN_ID`. Банки бывают объёмные (`1 LT`, `14 LT`) и массовые (`20 KG` — для крупных вёдер штукатурок):
+
+```
+если can.kind == "volume":
+    factor = target_ml / can.amount            # (ml/ml)
+если can.kind == "mass":
+    factor = target_g  / can.amount            # (g/g)
+
+drops_out    = formula_amount × factor
+ml_of_tint   = drops_out × drop_ml             # drop_ml = 0.1627
+grams_of_tint = ml_of_tint × colorant.density  # из CNTS.SPEC_W
+```
+
+Для кросс-конверсии (литры → массовая банка, или кг → объёмная) используется редактируемая **плотность базы** (по умолчанию 1.35 г/мл — типично для акриловых декоративных красок).
+
+## Структура статистики
+
+- **123 подпродукта**: COPRIMAX, EXTRAPAINT, KREOS, MARMORINO NATURALE/FINE, BIAMAX 03/07, FLEXIGRAP, SUPERMATT, DECORSIL (BOLOGNA/FIRENZE/ROMA/VENEZIA), BIOCOMPACT и др.
+- **73 167 формул**: 56 035 INTERIOR + 17 132 EXTERIOR
+- **25 коллекций цветов**: CC TONALITÀ DAL BIANCO, CC SOFT/MEDIUM, CC SPECIAL, COLLEZIONE COLORE, RAL, NCS, FUORI FASCIA, PREZZO DEDICATO, MEDIUM, SOFT, SPECIAL…
+- Распределение по банкам: 33.5% на 10 л, 23.0% на 14 л, 14.9% на 1 л, 13.7% на 2.25 л, 9.7% на 4 л; массовые (1/20 кг) — 4.4%.
+
+## Архитектура приложения
+
+```
+index.html    UI: селекторы, поиск, форма расчёта
+app.js        вся логика (~220 строк vanilla JS)
+styles.css    оформление + плавная смена фона на цвет формулы
+data.js       ядро (~13 KB): колоранты, базы, банки, каталог подпродуктов
+formulas/
+  p1.js       формулы INTERIOR (56 035 шт., ~4.6 MB)
+  p2.js       формулы EXTERIOR (17 132 шт., ~1.3 MB)
+tools/
+  extract_dbf.py   парсер dBase III (cp850) → JS
+```
+
+Файлы формул подгружаются лениво, по выбору категории. Версия базы подставляется в URL `?v=...` как cache-buster.
+
+## Как пользоваться
+
+1. **Категория**: INTERIOR или EXTERIOR.
+2. **Продукт**: выберите из выпадающего списка (поиск по коду/описанию — `MARMORINO`, `KREOS`, `EX2019` и т.д.).
+3. **Коллекция** и **Поиск по коду**: сузьте список из 20 000+ цветов (например, `RAL 2003` или `B 1005`).
+4. **Цвет**: при выборе фон страницы меняется на реальный оттенок.
+5. **Количество + Единица**: литры / мл / кг / г.
+6. **Плотность базы**: 1.35 г/мл по умолчанию (для декоративных красок 1.2–1.45, для штукатурок до 2.0).
+7. **Рассчитать** → таблица: капли / мл / граммы каждого колоранта + база и размер исходной банки формулы.
+
+## Перегенерация БД
+
+Если обновилась оригинальная программа Oikos Expert Tint:
+
+```
+python tools/extract_dbf.py
+git add -A && git commit -m "Update formulas" && git push
+```
+
+Требуется установленная Oikos Expert Tint (папка `C:\GDATA`) и Python 3.8+. Парсер читает dBase III напрямую, без сторонних зависимостей.
+
+## Лицензия и источник данных
+
+Формулы принадлежат Oikos Srl (Италия). Этот репозиторий — инструмент-калькулятор для уже приобретённой/лицензированной базы. База в репозитории извлечена из дистрибутива «Expert Tint 10.0 Marzo 2023».
+
+## Полезные ссылки
+
+- [Oikos Paint](https://www.oikos-paint.com/) — производитель красок
+- [COROB](https://www.corob.com/) — платформа колеровочных машин
+- [Corob Interface Notes — Setting Colorant Ids](https://www.xrite.com/service-support/corob_interface_notes__setting_colorant_ids) — описание COROB colorant ID
+- [CorobTECH 2.0 User Manual](https://www.scribd.com/doc/202793492/CorobTECH-2-0-User-Manual-English) — сервисное руководство
