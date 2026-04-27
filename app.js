@@ -37,6 +37,7 @@ function init() {
   $("series").addEventListener("change", refreshColorList);
   $("search").addEventListener("input", refreshColorList);
   $("color").addEventListener("change", onColorChange);
+  $("areaCalc").addEventListener("click", computeFromArea);
   $("calc").addEventListener("click", calculate);
 
   onProductChange();
@@ -170,12 +171,52 @@ function syncUnitsForColor(row) {
   if (!can) {
     $("canInfo").textContent = "— выберите цвет —";
     fillSelect($("unit"), VOLUME_UNITS, (u) => ({ value: u.value, textContent: u.label }));
+    syncCoverage(null, null);
     return;
   }
   const units = can.kind === "mass" ? MASS_UNITS : VOLUME_UNITS;
   fillSelect($("unit"), units, (u) => ({ value: u.value, textContent: u.label }));
   const noun = can.kind === "mass" ? "масса базы" : "объём базы";
   $("canInfo").textContent = `Формула задана на банку ${can.descr} (${noun}).`;
+  syncCoverage(currentSubproduct(), can);
+}
+
+function syncCoverage(sp, can) {
+  const cov = sp ? window.OIKOS_COVERAGE?.[sp.code] : null;
+  const yieldInput = $("yield");
+  const info = $("coverageInfo");
+  const unitNoun = can?.kind === "mass" ? "м²/кг" : "м²/л";
+  if (cov && (!can || cov.kind === can.kind)) {
+    const [lo, hi] = cov.yield;
+    const mid = (lo + hi) / 2;
+    yieldInput.value = mid.toFixed(2);
+    $("coats").value = cov.coats;
+    info.innerHTML = `Из TDS Oikos <code>${cov.source}</code>: <b>${lo === hi ? lo : `${lo}–${hi}`} ${unitNoun}</b> в ${cov.coats} сл.${cov.notes ? ` <i>(${cov.notes})</i>` : ""}`;
+  } else {
+    yieldInput.value = "";
+    info.textContent = "Расход для этого продукта не задан — посмотрите TDS Oikos и введите вручную.";
+  }
+}
+
+function computeFromArea() {
+  const row = state.visibleColors.find((r) => r[1] === $("color").value);
+  if (!row) return;
+  const can = state.core.cans[row[4]];
+  if (!can) return;
+  const area = parseFloat($("area").value);
+  const coats = parseInt($("coats").value, 10) || 1;
+  const yieldVal = parseFloat($("yield").value);
+  const reserve = parseFloat($("reserve").value) || 0;
+  if (!(area > 0) || !(yieldVal > 0)) {
+    alert("Введите площадь и расход (м²/л или м²/кг)");
+    return;
+  }
+  // yieldVal — м² на 1 единицу базы при coats слоях.
+  // нужно_единиц = площадь / расход
+  const needed = (area / yieldVal) * (1 + reserve / 100);
+  const unit = can.kind === "mass" ? "kg" : "L";
+  $("unit").value = unit;
+  $("amount").value = needed.toFixed(3);
 }
 
 function parseFormula(str) {

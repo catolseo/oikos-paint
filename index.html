@@ -60,7 +60,30 @@
           <select id="unit"></select>
         </label>
       </div>
-      <button id="calc">Рассчитать</button>
+      <details id="areaDetails">
+        <summary>Расчёт по площади (м²) — TDS Oikos</summary>
+        <p class="muted" id="coverageInfo">— расход не задан в TDS для этого продукта —</p>
+        <div class="grid2">
+          <label>
+            Площадь, м²
+            <input id="area" type="number" value="20" min="0.1" step="0.1" />
+          </label>
+          <label>
+            Слоёв (mani)
+            <input id="coats" type="number" value="2" min="1" max="5" step="1" />
+          </label>
+          <label>
+            Расход, м²/л или м²/кг
+            <input id="yield" type="number" step="0.01" />
+          </label>
+          <label>
+            Запас, %
+            <input id="reserve" type="number" value="10" min="0" max="50" step="1" />
+          </label>
+        </div>
+        <button id="areaCalc" type="button">Подставить нужное количество</button>
+      </details>
+      <button id="calc">Рассчитать формулу</button>
     </section>
 
     <section class="card" id="resultCard" hidden>
@@ -102,6 +125,7 @@
   </main>
 
   <script src="data.js"></script>
+  <script src="coverages.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
