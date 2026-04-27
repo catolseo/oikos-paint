@@ -9,6 +9,7 @@ const state = {
   formulasByProduct: {},
   currentFormulas: [],
   visibleColors: [],
+  yieldPerCoat: null, // м² на 1 литр/кг при ровно одном слое
 };
 
 const $ = (id) => document.getElementById(id);
@@ -37,6 +38,8 @@ function init() {
   $("series").addEventListener("change", refreshColorList);
   $("search").addEventListener("input", refreshColorList);
   $("color").addEventListener("change", onColorChange);
+  $("coats").addEventListener("input", onCoatsChange);
+  $("yield").addEventListener("input", onYieldChange);
   $("areaCalc").addEventListener("click", computeFromArea);
   $("calc").addEventListener("click", calculate);
 
@@ -189,13 +192,28 @@ function syncCoverage(sp, can) {
   if (cov && (!can || cov.kind === can.kind)) {
     const [lo, hi] = cov.yield;
     const mid = (lo + hi) / 2;
+    state.yieldPerCoat = mid * cov.coats;
     yieldInput.value = mid.toFixed(2);
     $("coats").value = cov.coats;
     info.innerHTML = `Из TDS Oikos <code>${cov.source}</code>: <b>${lo === hi ? lo : `${lo}–${hi}`} ${unitNoun}</b> в ${cov.coats} сл.${cov.notes ? ` <i>(${cov.notes})</i>` : ""}`;
   } else {
+    state.yieldPerCoat = null;
     yieldInput.value = "";
     info.textContent = "Расход для этого продукта не задан — посмотрите TDS Oikos и введите вручную.";
   }
+}
+
+function onCoatsChange() {
+  const c = parseInt($("coats").value, 10);
+  if (state.yieldPerCoat && c > 0) {
+    $("yield").value = (state.yieldPerCoat / c).toFixed(2);
+  }
+}
+
+function onYieldChange() {
+  const y = parseFloat($("yield").value);
+  const c = parseInt($("coats").value, 10) || 1;
+  if (y > 0) state.yieldPerCoat = y * c;
 }
 
 function computeFromArea() {
