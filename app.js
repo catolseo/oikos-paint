@@ -37,8 +37,6 @@ function init() {
   $("series").addEventListener("change", refreshColorList);
   $("search").addEventListener("input", refreshColorList);
   $("color").addEventListener("change", onColorChange);
-  $("materialKind").addEventListener("change", onMaterialKindChange);
-  $("density").addEventListener("input", () => ($("materialKind").value = "custom"));
   $("calc").addEventListener("click", calculate);
 
   onProductChange();
@@ -106,41 +104,10 @@ async function ensureProductLoaded(prd_id) {
   $("loadStatus").textContent = "";
 }
 
-const MATERIAL_RULES = [
-  { density: 1.85, words: ["MARMORINO", "COCCIO", "INTONACO", "CEMENTO MATERICO", "TADELAKT"] },
-  { density: 1.70, words: ["BETONCRYLL", "DECORSIL", "BIOCOMPACT", "MICOTRAL"] },
-  { density: 1.55, words: ["FLEXIGRAP", "DUAFLEX", "ELASTRONG"] },
-  { density: 1.05, words: ["FINITURA AUTOLUCID", "VELATURA"] },
-  { density: 1.35, words: ["KREOS", "ENCANTO", "DUCA", "PIGMENTATO", "MULTIDECOR", "GRANADA", "FUNDGRAP", "BIAMAX", "RAFFAELLO", "TIVOLI"] },
-];
-const DEFAULT_DENSITY = 1.45;
-
-function inferDensity(descr) {
-  const s = (descr || "").toUpperCase();
-  for (const rule of MATERIAL_RULES) {
-    if (rule.words.some((w) => s.includes(w))) return rule.density;
-  }
-  return DEFAULT_DENSITY;
-}
-
-function onMaterialKindChange() {
-  const v = $("materialKind").value;
-  if (v !== "custom") $("density").value = v;
-}
-
-function applyDensityFor(sp) {
-  const d = inferDensity(sp?.descr);
-  const sel = $("materialKind");
-  const match = Array.from(sel.options).find((o) => parseFloat(o.value) === d);
-  sel.value = match ? match.value : "custom";
-  $("density").value = d.toFixed(2);
-}
-
 function onSubproductChange() {
   const p = currentProduct();
   const sp = currentSubproduct();
   if (!p || !sp) return;
-  applyDensityFor(sp);
   const rows = state.formulasByProduct[p.id] || [];
   state.currentFormulas = rows.filter((r) => r[0] === sp.id);
   const series = [...new Set(state.currentFormulas.map((r) => r[2]).filter(Boolean))].sort();
@@ -166,25 +133,49 @@ function refreshColorList() {
   }));
 }
 
-function toMl(amount, unit, density) {
-  switch (unit) {
-    case "L": return amount * ML_PER_L;
-    case "ml": return amount;
-    case "kg": return (amount * ML_PER_L) / density;
-    case "g": return amount / density;
-    default: return 0;
+function toCanUnits(amount, unit, canKind) {
+  if (canKind === "mass") {
+    if (unit === "kg") return amount * 1000;
+    if (unit === "g") return amount;
+    return null;
   }
+  if (unit === "L") return amount * ML_PER_L;
+  if (unit === "ml") return amount;
+  return null;
 }
 
 function rgbToHex(rgb) {
   return rgb ? "#" + rgb.map((n) => n.toString(16).padStart(2, "0")).join("") : null;
 }
 
+const VOLUME_UNITS = [
+  { value: "L", label: "литры" },
+  { value: "ml", label: "миллилитры" },
+];
+const MASS_UNITS = [
+  { value: "kg", label: "килограммы" },
+  { value: "g", label: "граммы" },
+];
+
 function onColorChange() {
   const row = state.visibleColors.find((r) => r[1] === $("color").value);
   const hex = rgbToHex(row?.[6]);
   document.body.style.setProperty("--selected-color", hex || "transparent");
   document.body.classList.toggle("has-color", !!hex);
+  syncUnitsForColor(row);
+}
+
+function syncUnitsForColor(row) {
+  const can = row ? state.core.cans[row[4]] : null;
+  if (!can) {
+    $("canInfo").textContent = "— выберите цвет —";
+    fillSelect($("unit"), VOLUME_UNITS, (u) => ({ value: u.value, textContent: u.label }));
+    return;
+  }
+  const units = can.kind === "mass" ? MASS_UNITS : VOLUME_UNITS;
+  fillSelect($("unit"), units, (u) => ({ value: u.value, textContent: u.label }));
+  const noun = can.kind === "mass" ? "масса базы" : "объём базы";
+  $("canInfo").textContent = `Формула задана на банку ${can.descr} (${noun}).`;
 }
 
 function parseFormula(str) {
@@ -203,12 +194,11 @@ function calculate() {
   const amount = parseFloat($("amount").value);
   if (!(amount > 0)) return;
   const unit = $("unit").value;
-  const density = parseFloat($("density").value) || 1.35;
 
   const can = state.core.cans[can_id];
-  const targetMl = toMl(amount, unit, density);
-  const targetG = targetMl * density;
-  const factor = can.kind === "mass" ? targetG / can.amount : targetMl / can.amount;
+  const target = toCanUnits(amount, unit, can.kind);
+  if (target === null) return;
+  const factor = target / can.amount;
   const items = parseFormula(fstr);
 
   const tbody = $("result").querySelector("tbody");

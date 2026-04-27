@@ -49,6 +49,7 @@
 
     <section class="card">
       <h2>3. Сколько замешать</h2>
+      <p class="muted" id="canInfo">— выберите цвет —</p>
       <div class="grid2">
         <label>
           Количество
@@ -56,28 +57,7 @@
         </label>
         <label>
           Единица
-          <select id="unit">
-            <option value="L">литры</option>
-            <option value="ml">миллилитры</option>
-            <option value="kg">килограммы</option>
-            <option value="g">граммы</option>
-          </select>
-        </label>
-        <label>
-          Тип материала
-          <select id="materialKind">
-            <option value="1.35">Декоративная краска (1.35)</option>
-            <option value="1.45">Укрывистая краска / эмаль (1.45)</option>
-            <option value="1.55">Эластомерная / силиконовая (1.55)</option>
-            <option value="1.70">Штукатурка тонкая (1.70)</option>
-            <option value="1.85">Штукатурка крупная / марморино (1.85)</option>
-            <option value="1.05">Лазурь / прозрачная (1.05)</option>
-            <option value="custom">— своё значение —</option>
-          </select>
-        </label>
-        <label>
-          Плотность базы, г/мл
-          <input id="density" type="number" value="1.35" min="0.5" max="2.5" step="0.01" />
+          <select id="unit"></select>
         </label>
       </div>
       <button id="calc">Рассчитать</button>
@@ -112,7 +92,7 @@
           </tr>
         </tfoot>
       </table>
-      <p class="muted">1 капля = <span id="dropVol"></span> мл (COROB 1/192 EU fl.oz.). База: <span id="baseName"></span>. Исходная формула — для банки <span id="canName"></span>.</p>
+      <p class="muted">1 капля = <span id="dropVol"></span> мл (COROB 1/192 EU fl.oz.). База: <span id="baseName"></span>. Исходная формула — для банки <span id="canName"></span>. Расчёт строго по COROB: <code>drops × запрос / банка</code>, без перевода литров↔кг.</p>
     </section>
 
     <section class="card">
