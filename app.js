@@ -37,6 +37,8 @@ function init() {
   $("series").addEventListener("change", refreshColorList);
   $("search").addEventListener("input", refreshColorList);
   $("color").addEventListener("change", onColorChange);
+  $("materialKind").addEventListener("change", onMaterialKindChange);
+  $("density").addEventListener("input", () => ($("materialKind").value = "custom"));
   $("calc").addEventListener("click", calculate);
 
   onProductChange();
@@ -104,10 +106,41 @@ async function ensureProductLoaded(prd_id) {
   $("loadStatus").textContent = "";
 }
 
+const MATERIAL_RULES = [
+  { density: 1.85, words: ["MARMORINO", "COCCIO", "INTONACO", "CEMENTO MATERICO", "TADELAKT"] },
+  { density: 1.70, words: ["BETONCRYLL", "DECORSIL", "BIOCOMPACT", "MICOTRAL"] },
+  { density: 1.55, words: ["FLEXIGRAP", "DUAFLEX", "ELASTRONG"] },
+  { density: 1.05, words: ["FINITURA AUTOLUCID", "VELATURA"] },
+  { density: 1.35, words: ["KREOS", "ENCANTO", "DUCA", "PIGMENTATO", "MULTIDECOR", "GRANADA", "FUNDGRAP", "BIAMAX", "RAFFAELLO", "TIVOLI"] },
+];
+const DEFAULT_DENSITY = 1.45;
+
+function inferDensity(descr) {
+  const s = (descr || "").toUpperCase();
+  for (const rule of MATERIAL_RULES) {
+    if (rule.words.some((w) => s.includes(w))) return rule.density;
+  }
+  return DEFAULT_DENSITY;
+}
+
+function onMaterialKindChange() {
+  const v = $("materialKind").value;
+  if (v !== "custom") $("density").value = v;
+}
+
+function applyDensityFor(sp) {
+  const d = inferDensity(sp?.descr);
+  const sel = $("materialKind");
+  const match = Array.from(sel.options).find((o) => parseFloat(o.value) === d);
+  sel.value = match ? match.value : "custom";
+  $("density").value = d.toFixed(2);
+}
+
 function onSubproductChange() {
   const p = currentProduct();
   const sp = currentSubproduct();
   if (!p || !sp) return;
+  applyDensityFor(sp);
   const rows = state.formulasByProduct[p.id] || [];
   state.currentFormulas = rows.filter((r) => r[0] === sp.id);
   const series = [...new Set(state.currentFormulas.map((r) => r[2]).filter(Boolean))].sort();
